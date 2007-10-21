@@ -40,13 +40,14 @@ static void version()
  */
 int main(int argc, char **argv)
 {
+    static const char zero_tile[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     char *chr_in;
     char *chr_out = 0;
     long sz_in;
     long sz_out;
     char nametable[1024];
     int nametable_sz;
-    int nametable_base = 0;
+    int nametable_base = 1;
     const char *input_filename = 0;
     const char *character_output_filename = 0;
     const char *nametable_output_filename = 0;
@@ -113,20 +114,26 @@ int main(int argc, char **argv)
         long nametable_pos = 0;
         while (pos_in < sz_in) {
             long i;
-            char *tile_in = &chr_in[pos_in];
-            for (i = 0; i < pos_out; i += 16) {
-                if (!memcmp(tile_in, &chr_out[i], 16))
-                    break;
-            }
-            if (i == pos_out) {
-                if (pos_out == buf_sz) {
-                    buf_sz += 1024;
-                    chr_out = realloc(chr_out, buf_sz);
+            const char *tile_in = &chr_in[pos_in];
+            const int is_zero_tile = !memcmp(tile_in, zero_tile, 16);
+            if (!is_zero_tile) {
+                for (i = 0; i < pos_out; i += 16) {
+                    if (!memcmp(tile_in, &chr_out[i], 16))
+                        break;
                 }
-                memcpy(&chr_out[pos_out], tile_in, 16);
-                pos_out += 16;
+                if (i == pos_out) {
+                    if (pos_out == buf_sz) {
+                        buf_sz += 1024;
+                        chr_out = realloc(chr_out, buf_sz);
+                    }
+                    memcpy(&chr_out[pos_out], tile_in, 16);
+                    pos_out += 16;
+                }
+                nametable[nametable_pos] = (char)((i / 16) + nametable_base);
+            } else {
+                nametable[nametable_pos] = 0;
             }
-            nametable[nametable_pos++] = (char)((i / 16) + nametable_base);
+            ++nametable_pos;
             pos_in += 16;
         }
         sz_out = pos_out;
