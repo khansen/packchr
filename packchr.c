@@ -8,7 +8,7 @@ static char program_version[] = "packchr 1.0";
 static void usage()
 {
     printf(
-        "Usage: packchr [--nametable-base=NUM]\n"
+        "Usage: packchr [--nametable-base=NUM] [--null-tile=NUM]\n"
         "               [--character-output=FILE] [--nametable-output=FILE]\n"
         "               [--help] [--usage] [--version]\n"
         "                FILE\n");
@@ -20,6 +20,7 @@ static void help()
 {
     printf("Usage: packchr [OPTION...] FILE\n\n"
            "  --nametable-base=NUM            Use NUM as nametable base\n"
+           "  --null-tile=NUM                 Use NUM as implicit null tile\n"
            "  --character-output=FILE         Store packed CHR in FILE\n"
            "  --nametable-output=FILE         Store nametable in FILE\n"
            "  --help                          Give this help list\n"
@@ -40,7 +41,7 @@ static void version()
  */
 int main(int argc, char **argv)
 {
-    static const char zero_tile[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    static const char null_tile_data[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     char *chr_in;
     char *chr_out = 0;
     long sz_in;
@@ -51,6 +52,7 @@ int main(int argc, char **argv)
     const char *input_filename = 0;
     const char *character_output_filename = 0;
     const char *nametable_output_filename = 0;
+    int null_tile = -1;
     /* Process arguments. */
     {
         char *p;
@@ -63,6 +65,8 @@ int main(int argc, char **argv)
                     character_output_filename = &opt[17];
                 } else if (!strncmp("nametable-output=", opt, 17)) {
                     nametable_output_filename = &opt[17];
+                } else if (!strncmp("null-tile=", opt, 10)) {
+                    null_tile = strtol(&opt[10], 0, 0);
                 } else if (!strcmp("help", opt)) {
                     help();
                 } else if (!strcmp("usage", opt)) {
@@ -115,8 +119,8 @@ int main(int argc, char **argv)
         while (pos_in < sz_in) {
             long i;
             const char *tile_in = &chr_in[pos_in];
-            const int is_zero_tile = !memcmp(tile_in, zero_tile, 16);
-            if (!is_zero_tile) {
+            const int is_null_tile = !memcmp(tile_in, null_tile_data, 16);
+            if (!is_null_tile || (null_tile == -1)) {
                 for (i = 0; i < pos_out; i += 16) {
                     if (!memcmp(tile_in, &chr_out[i], 16))
                         break;
@@ -131,7 +135,7 @@ int main(int argc, char **argv)
                 }
                 nametable[nametable_pos] = (char)((i / 16) + nametable_base);
             } else {
-                nametable[nametable_pos] = 0;
+                nametable[nametable_pos] = (char)null_tile;
             }
             ++nametable_pos;
             pos_in += 16;
