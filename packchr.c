@@ -10,6 +10,7 @@ static void usage()
     printf(
         "Usage: packchr [--nametable-base=NUM] [--null-tile=NUM]\n"
         "               [--character-output=FILE] [--nametable-output=FILE]\n"
+        "               [--character-size=SIZE]\n"
         "               [--help] [--usage] [--version]\n"
         "                FILE\n");
     exit(0);
@@ -22,6 +23,7 @@ static void help()
            "  --nametable-base=NUM            Use NUM as nametable base\n"
            "  --null-tile=NUM                 Use NUM as implicit null tile\n"
            "  --character-output=FILE         Store packed CHR in FILE\n"
+           "  --character-size=SIZE           Pad to SIZE bytes if necessary\n"
            "  --nametable-output=FILE         Store nametable in FILE\n"
            "  --help                          Give this help list\n"
            "  --usage                         Give a short usage message\n"
@@ -48,11 +50,12 @@ int main(int argc, char **argv)
     long sz_out;
     char nametable[1024];
     int nametable_sz;
-    int nametable_base = 1;
+    int nametable_base = 0;
     const char *input_filename = 0;
     const char *character_output_filename = 0;
     const char *nametable_output_filename = 0;
     int null_tile = -1;
+    long pad_sz = -1;
     /* Process arguments. */
     {
         char *p;
@@ -63,6 +66,8 @@ int main(int argc, char **argv)
                     nametable_base = strtol(&opt[15], 0, 0);
                 } else if (!strncmp("character-output=", opt, 17)) {
                     character_output_filename = &opt[17];
+                } else if (!strncmp("character-size=", opt, 15)) {
+                    pad_sz = strtol(&opt[15], 0, 0);
                 } else if (!strncmp("nametable-output=", opt, 17)) {
                     nametable_output_filename = &opt[17];
                 } else if (!strncmp("null-tile=", opt, 10)) {
@@ -147,6 +152,13 @@ int main(int argc, char **argv)
     {
         FILE *fp = fopen(character_output_filename, "wb");
         fwrite(chr_out, 1, sz_out, fp);
+        if (pad_sz != -1) {
+            if (pad_sz > sz_out) {
+                long i;
+                for (i = sz_out; i < pad_sz; ++i)
+                    fputc(0, fp);
+            }
+        }
         fclose(fp);
     }
 
