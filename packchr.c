@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 
     if (!input_filename) {
         fprintf(stderr, "packchr: no filename given\n"
-                        "Try `packchr --help' or `packchr --usage' for more information.");
+                        "Try `packchr --help' or `packchr --usage' for more information.\n");
         return(-1);
     }
 
