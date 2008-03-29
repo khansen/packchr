@@ -1,3 +1,20 @@
+/*
+    This file is part of packchr.
+
+    packchr is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    packchr is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with packchr.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +28,7 @@ static void usage()
     printf(
         "Usage: packchr [--nametable-base=NUM] [--null-tile=NUM]\n"
         "               [--character-output=FILE] [--nametable-output=FILE]\n"
-        "               [--character-size=SIZE]\n"
+        "               [--character-size=SIZE] [--verbose]\n"
         "               [--help] [--usage] [--version]\n"
         "                FILE\n");
     exit(0);
@@ -46,14 +63,61 @@ static void version()
     exit(0);
 }
 
+/* Packs character data. */
+void pack_chr(const char *chr_in, int sz_in, int null_tile, int nametable_base,
+              char **chr_out, long *sz_out, unsigned char *nametable)
+{
+    static const char null_tile_data[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    long buf_sz = 0;
+    long pos_in = 0;
+    long pos_out = 0;
+    long nametable_pos = 0;
+    int warn_wraparound = 1;
+    *chr_out = 0;
+    while (pos_in < sz_in) {
+	long i;
+	const char *tile_in = &chr_in[pos_in];
+	const int is_null_tile = !memcmp(tile_in, null_tile_data, 16);
+	if (!is_null_tile || (null_tile == -1)) {
+	    /* See if tile is equal to one we already recorded */
+	    for (i = 0; i < pos_out; i += 16) {
+		if (!memcmp(tile_in, &(*chr_out)[i], 16))
+		    break;
+	    }
+	    if (i == pos_out) {
+		/* Add tile */
+		if (pos_out == buf_sz) {
+		    buf_sz += 1024;
+		    *chr_out = realloc(*chr_out, buf_sz);
+		    assert(*chr_out);
+		}
+		memcpy(&(*chr_out)[pos_out], tile_in, 16);
+		pos_out += 16;
+	    }
+	    int tile_index = (i / 16) + nametable_base;
+	    if ((tile_index >= 256) && warn_wraparound) {
+		fprintf(stderr, "packchr: warning: tile index >= 256 (wrap-around); "
+			"you should reduce the size and/or detail of the input and retry\n");
+		warn_wraparound = 0;
+	    }
+	    nametable[nametable_pos] = (unsigned char)tile_index;
+	} else {
+	    nametable[nametable_pos] = (unsigned char)null_tile;
+	}
+	++nametable_pos;
+	pos_in += 16;
+    }
+    *sz_out = pos_out;
+    assert((sz_in/16) == nametable_pos);
+}
+
 /**
  * Program entrypoint.
  */
 int main(int argc, char **argv)
 {
-    static const char null_tile_data[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     char *chr_in;
-    char *chr_out = 0;
+    char *chr_out;
     long sz_in;
     long sz_out;
     unsigned char *nametable;
@@ -73,14 +137,26 @@ int main(int argc, char **argv)
                 const char *opt = &p[2];
                 if (!strncmp("nametable-base=", opt, 15)) {
                     nametable_base = strtol(&opt[15], 0, 0);
+                    if (nametable_base < 0 || nametable_base >= 256) {
+                        fprintf(stderr, "packchr: nametable base must be in range 0..255\n");
+                        return(-1);
+                    }
                 } else if (!strncmp("character-output=", opt, 17)) {
                     character_output_filename = &opt[17];
                 } else if (!strncmp("character-size=", opt, 15)) {
                     pad_sz = strtol(&opt[15], 0, 0);
+                    if (pad_sz < 0) {
+                        fprintf(stderr, "packchr: character size must be a positive integer\n");
+                        return(-1);
+                    }
                 } else if (!strncmp("nametable-output=", opt, 17)) {
                     nametable_output_filename = &opt[17];
                 } else if (!strncmp("null-tile=", opt, 10)) {
                     null_tile = strtol(&opt[10], 0, 0);
+                    if (null_tile < 0 || null_tile >= 256) {
+                        fprintf(stderr, "packchr: null tile must be in range 0..255\n");
+                        return(-1);
+                    }
                 } else if (!strcmp("verbose", opt)) {
                     verbose = 1;
                 } else if (!strcmp("help", opt)) {
@@ -90,7 +166,8 @@ int main(int argc, char **argv)
                 } else if (!strcmp("version", opt)) {
                     version();
                 } else {
-                    fprintf(stderr, "unrecognized option `%s'\n", p);
+                    fprintf(stderr, "packchr: unrecognized option `%s'\n"
+			    "Try `packchr --help' or `packchr --usage' for more information.\n", p);
                     return(-1);
                 }
             } else {
@@ -146,41 +223,7 @@ int main(int argc, char **argv)
     /* Create packed CHR and nametable */
     if (verbose)
         fprintf(stdout, "processing\n");
-    {
-        long buf_sz = 0;
-        long pos_in = 0;
-        long pos_out = 0;
-        long nametable_pos = 0;
-        while (pos_in < sz_in) {
-            long i;
-            const char *tile_in = &chr_in[pos_in];
-            const int is_null_tile = !memcmp(tile_in, null_tile_data, 16);
-            if (!is_null_tile || (null_tile == -1)) {
-                /* See if tile is equal to one we already recorded */
-                for (i = 0; i < pos_out; i += 16) {
-                    if (!memcmp(tile_in, &chr_out[i], 16))
-                        break;
-                }
-                if (i == pos_out) {
-                    /* Add tile */
-                    if (pos_out == buf_sz) {
-                        buf_sz += 1024;
-                        chr_out = realloc(chr_out, buf_sz);
-                        assert(chr_out);
-                    }
-                    memcpy(&chr_out[pos_out], tile_in, 16);
-                    pos_out += 16;
-                }
-                nametable[nametable_pos] = (unsigned char)((i / 16) + nametable_base);
-            } else {
-                nametable[nametable_pos] = (unsigned char)null_tile;
-            }
-            ++nametable_pos;
-            pos_in += 16;
-        }
-        sz_out = pos_out;
-        assert(nametable_sz == nametable_pos);
-    }
+    pack_chr(chr_in, sz_in, null_tile, nametable_base, &chr_out, &sz_out, nametable);
 
     /* Write CHR */
     if (verbose) {
