@@ -45,11 +45,11 @@ static void help()
            "                                  as NUM in the nametable, the second as\n"
            "                                  NUM+1, etc.; by default NUM is 0\n"
            "  --null-tile=NUM                 Use NUM as implicit null tile index; that is,\n"
-           "                                  don't produce any data for a 'blank' tile\n"
+           "                                  don't produce any character data for a 'blank' tile\n"
            "  --character-output=FILE         Store packed CHR in FILE\n"
            "  --character-size=SIZE           Pad to SIZE bytes if necessary\n"
            "  --nametable-output=FILE         Store nametable in FILE\n"
-           "  --verbose                       Print statistics\n"  
+           "  --verbose                       Print progress information to standard output\n"  
            "  --help                          Give this help list\n"
            "  --usage                         Give a short usage message\n"
            "  --version                       Print program version\n");

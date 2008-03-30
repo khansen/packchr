@@ -19,6 +19,7 @@ packchr: $(OBJS)
 
 install: packchr
 	$(INSTALL) -m 0755 packchr $(bindir)
+	$(INSTALL) -m 0444 packchr.1 $(mandir)/man1
 
 clean:
 	rm -f $(OBJS) packchr packchr.exe
