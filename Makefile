@@ -20,7 +20,7 @@ packchr: $(OBJS)
 install: packchr
 	$(INSTALL) -m 0755 packchr $(bindir)
 
-.PHONY: clean
-
 clean:
-	rm -f *.o packchr packchr.exe
+	rm -f $(OBJS) packchr packchr.exe
+
+.PHONY: clean install
