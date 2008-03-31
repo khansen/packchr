@@ -55,7 +55,7 @@ ABCDE
 and a nametable file indexing the unique tiles (0=A, 1=B, and so on):
 </para>
 <para>
-00011234111113300001010
+0 0 0 1 1 2 3 4 1 1 1 1 1 3 3 0 0 0 0 1 0 1 0
 </para>
 </refsect1>
 

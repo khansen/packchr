@@ -18,8 +18,8 @@ ABCDE
 </p><p>
 and a nametable file indexing the unique tiles (0=A, 1=B, and so on):
 </p><p>
-00011234111113300001010
-</p></div><div class="refsect1" lang="en"><a name="id454547"></a><h2>Options</h2><div class="variablelist"><dl><dt><span class="term">
+0 0 0 1 1 2 3 4 1 1 1 1 1 3 3 0 0 0 0 1 0 1 0
+</p></div><div class="refsect1" lang="en"><a name="id454548"></a><h2>Options</h2><div class="variablelist"><dl><dt><span class="term">
 <code class="option">--nametable-base</code>=<em class="parameter"><code>num</code></em>
 </span></dt><dd><p>
 Use <em class="parameter"><code>num</code></em> as nametable base tile index; i.e. the
@@ -63,13 +63,13 @@ Give a short usage message.
 <code class="option">--version</code>
 </span></dt><dd><p>
 Print program version.
-</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id454780"></a><h2>Files</h2><div class="refsect2" lang="en"><a name="id454785"></a><h3>Output</h3><p>
+</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id454781"></a><h2>Files</h2><div class="refsect2" lang="en"><a name="id454786"></a><h3>Output</h3><p>
 The packchr output consists of two parts: One is the character data,
 stripped of duplicate tiles. The other part is the nametable data,
 which is a series of bytes containing tile indexes. Together, these
 two pieces of data can be used to reconstruct the original graphic
 (the input to packchr).
-</p></div></div><div class="refsect1" lang="en"><a name="id454801"></a><h2>Examples</h2><p>
+</p></div></div><div class="refsect1" lang="en"><a name="id454802"></a><h2>Examples</h2><p>
 To pack <code class="literal">myimage.chr</code>:
 </p><p>
 <strong class="userinput"><code>
@@ -87,6 +87,6 @@ To pack <code class="literal">myimage.chr</code> and transpose the tile indexes 
 <strong class="userinput"><code>
 packchr --nametable-base=0x80 myimage.chr
 </code></strong>
-</p></div><div class="refsect1" lang="en"><a name="id454861"></a><h2>See Also</h2><p>
+</p></div><div class="refsect1" lang="en"><a name="id454862"></a><h2>See Also</h2><p>
 packnam(1)
 </p></div></div></body></html>
